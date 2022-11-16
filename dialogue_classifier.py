@@ -7,7 +7,10 @@ import csv
 import numpy as np
 import time
 
+"""* * * PREPARING DATA * * *"""
 def get_raw_training_data(path):
+    """Reads data in from a csv file, returning a list of dictionaries. Each
+    dictionary will have two key-val pairs with keys 'person' and 'sentence """
     dicts = []
     with open(path, newline='') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -16,56 +19,78 @@ def get_raw_training_data(path):
             row_info["person"] = row[0].replace('"', '')
             row_info["sentence"] = row[1].replace('"', '')
             dicts.append(row_info)
-
     return dicts
 
 def preprocess_words(words, stemmer):
+    '''Generate stems for each word, eliminating duplicates. The stem represents
+    the meaningful chunk of the word that will be useful. Returns a list of all
+    the unique stems'''
     stems = set()
     for word in words:
         stems.add(stemmer.stem(word))
     return list(stems)
 
 def organize_raw_training_data(raw_training_data, stemmer):
-    words = [] #all words used by anyone
+    '''Organizes the training data by gathering lists of all the unique word
+    stems and actors(we calling them classes) observed from the training data.
+    Words holds all the unique word stems, classes holds all the unique actors, 
+    and documents holds tuples of actor name with tokens for the sentence'''
+    #Initialize variables
+    words = []
     documents = []
     classes = set()
+
+    #Fill the organized trianing structures
     for row_dict in raw_training_data:
         tokens = nltk.word_tokenize(row_dict['sentence'])
-        row_dict["sentence"] = tokens
-        words.extend(tokens)#add all tokens to words
+        words.extend(tokens)#combine current words with all new ones
         classes.add(row_dict["person"])
-        documents.append(row_dict)
+        documents.append((row_dict["person"], tokens))
 
-    words = preprocess_words(words, stemmer)
+    words = preprocess_words(words, stemmer)#eliminates duplicate words
     return words, list(classes), documents
 
 def create_training_data(words, classes, documents, stemmer):
+    '''Our training data gets organized into two 2D lists, which store info
+    on actors and words used. Each element in the training_data list is a list
+    of n integers(0 or 1) where n is the number of words. There is a 1 at any 
+    index where that corresponding word is used in the sentence. The same 
+    strategy is used for output, but n represents the number of classes(actors),
+    and there is a 1 at the index of corresponding actor.
+    '''
+    #Initialize the structures
     training_data = []
     bag = [0] * len(words)
-
     output = []
     output_line = [0] * len(classes)
 
+    #loop through all training data points
     for document in documents:
-        tokens = document["sentence"]
+        tokens = document[1]
+
+        #mark which words were used
         for i,word in enumerate(words):
             if word in tokens:
                 bag[i] = 1
 
+        #set bag back to default
         training_data.append(bag)
         bag = [0] * len(words)
 
-        character_name = document['person']
+        #marks which character said the line
+        character_name = document[0]
         for i,name in enumerate(classes):
             if character_name == name:
                 output_line[i] = 1
-            
+
+        #set outpu_line back to default    
         output.append(output_line)
         output_line = [0] * len(classes)
 
     return training_data, output
 
 def sigmoid(z):
+    ''' Returns output of sigmoid function on z'''
     return 1/(1 + np.exp(-z))
 
 def sigmoid_output_to_derivative(output):
@@ -241,7 +266,7 @@ def classify(words, classes, sentence):
 
 
 def main():
-    # All the training data preperations.
+    # All the training  preperations.
     nltk.download('punkt')
     stemmer = LancasterStemmer()
     raw_training_data = get_raw_training_data('dialogue_data.csv')
@@ -249,7 +274,7 @@ def main():
     training_data, output = create_training_data(words, classes, documents, stemmer)
     
     # Comment this out if you have already trained once and don't want to re-train.
-    #start_training(words, classes, training_data, output)
+    start_training(words, classes, training_data, output)
 
     # Classify new sentences.
     classify(words, classes, "will you look into the mirror?")
