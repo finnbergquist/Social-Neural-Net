@@ -15,10 +15,11 @@ def get_raw_training_data(path):
     with open(path, newline='') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
         for row in spamreader:
-            row_info = {}
-            row_info["person"] = row[0].replace('"', '')
-            row_info["sentence"] = row[1].replace('"', '')
-            dicts.append(row_info)
+            if row:
+                row_info = {}
+                row_info["person"] = row[0].replace('"', '')
+                row_info["sentence"] = row[1].replace('"', '')
+                dicts.append(row_info)
     return dicts
 
 def preprocess_words(words, stemmer):
@@ -45,7 +46,7 @@ def organize_raw_training_data(raw_training_data, stemmer):
         tokens = nltk.word_tokenize(row_dict['sentence'])
         words.extend(tokens)#combine current words with all new ones
         classes.add(row_dict["person"])
-        documents.append((row_dict["person"], tokens))
+        documents.append((row_dict["person"], tokens,stemmer))
 
     words = preprocess_words(words, stemmer)#eliminates duplicate words
     return words, list(classes), documents
@@ -71,7 +72,7 @@ def create_training_data(words, classes, documents, stemmer):
         #mark which words were used
         for i,word in enumerate(words):
             if word in tokens:
-                bag[i] = 1
+                bag[i] = 1 #set corresponding word's index to 1
 
         #set bag back to default
         training_data.append(bag)
@@ -81,12 +82,13 @@ def create_training_data(words, classes, documents, stemmer):
         character_name = document[0]
         for i,name in enumerate(classes):
             if character_name == name:
-                output_line[i] = 1
+                output_line[i] = 1#set corresponding class's index to 1
 
-        #set outpu_line back to default    
+        #set output_line back to default    
         output.append(output_line)
         output_line = [0] * len(classes)
 
+    print(training_data)
     return training_data, output
 
 def sigmoid(z):
