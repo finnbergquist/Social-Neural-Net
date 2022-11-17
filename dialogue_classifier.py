@@ -16,6 +16,7 @@ def get_raw_training_data(path):
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
         for row in spamreader:
             if row:
+                #create a dictionary with person and sentence for each row
                 row_info = {}
                 row_info["person"] = row[0].replace('"', '')
                 row_info["sentence"] = row[1].replace('"', '')
@@ -88,7 +89,6 @@ def create_training_data(words, classes, documents, stemmer):
         output.append(output_line)
         output_line = [0] * len(classes)
 
-    print(training_data)
     return training_data, output
 
 def sigmoid(z):
@@ -110,7 +110,6 @@ def init_synapses(X, hidden_neurons, classes):
     synapse_1 = 2*np.random.random((hidden_neurons, len(classes))) - 1
 
     return synapse_0, synapse_1
-
 
 def feedforward(X, synapse_0, synapse_1):
     """Feed forward through layers 0, 1, and 2."""
@@ -276,7 +275,7 @@ def main():
     training_data, output = create_training_data(words, classes, documents, stemmer)
     
     # Comment this out if you have already trained once and don't want to re-train.
-    start_training(words, classes, training_data, output)
+    #start_training(words, classes, training_data, output)
 
     # Classify new sentences.
     classify(words, classes, "will you look into the mirror?")
